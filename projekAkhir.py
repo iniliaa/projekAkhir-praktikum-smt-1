@@ -1,8 +1,10 @@
-# LOGIN
+from datetime import datetime
+
+#login
 USERNAME = "admin"
 PASSWORD = "12345"
 
-# DATA PENYIMPANAN
+#data
 ruangan = {}
 reservasi = {}
 
@@ -13,77 +15,114 @@ HARGA_TIPE = {
     "VIP": 500000
 }
 
-# VALIDASI
+#validasi
 def validasi_tipe(tipe):
     return tipe in HARGA_TIPE
 
+def validasi_nama(nama):
+    return nama.replace(" ", "").isalpha()
 
-# LOGIN
+def validasi_tanggal(tgl):
+    try:
+        datetime.strptime(tgl, "%d-%m-%Y")
+        return True
+    except:
+        return False
+
+
+#loginnn
 def login():
     while True:
-        user = input("Username: ")
-        pw = input("Password: ")
-        if user == USERNAME and pw == PASSWORD:
+        if input("Username: ") == USERNAME and input("Password: ") == PASSWORD:
             print("Login berhasil.\n")
             return
         print("Username atau password salah.\n")
 
 
-# FUNGSI RUANGAN
+#ruangan
 def tambah_ruangan():
-    tipe = input("Tipe ruangan (STANDART/PREMIUM/EXECUTIVE/VIP): ").upper()
-    
+    tipe = input("Tipe (STANDART/PREMIUM/EXECUTIVE/VIP): ").upper()
     if not validasi_tipe(tipe):
-        print("Tipe tidak valid.")
+        print("Tipe tidak valid!")
         return
     
-    id_ruangan = f"R{len(ruangan)+1:03d}"
-    ruangan[id_ruangan] = {
+    id_r = f"R{len(ruangan)+1:03d}"
+    ruangan[id_r] = {
         "tipe": tipe,
         "harga": HARGA_TIPE[tipe]
     }
-    print(f"Ruangan ditambahkan: ID {id_ruangan}")
+    print(f"Ruangan ditambahkan: {id_r}")
 
 def tampilkan_ruangan():
     if not ruangan:
         print("Belum ada ruangan.")
         return
-    
     print("\nDaftar Ruangan:")
     for i, (id_r, d) in enumerate(ruangan.items(), start=1):
         print(f"{i}. {id_r} | {d['tipe']} | Rp{d['harga']}")
-    print()
+
+def edit_ruangan():
+    tampilkan_ruangan()
+    if not ruangan:
+        return
+    
+    id_r = input("ID ruangan yang diedit: ").upper()
+    if id_r not in ruangan:
+        print("ID tidak ada!")
+        return
+
+    tipe_baru = input("Tipe baru (STANDART/PREMIUM/EXECUTIVE/VIP): ").upper()
+    if not validasi_tipe(tipe_baru):
+        print("Tipe tidak valid!")
+        return
+
+    # Update ruangan
+    ruangan[id_r]["tipe"] = tipe_baru
+    ruangan[id_r]["harga"] = HARGA_TIPE[tipe_baru]
+
+    # Update harga di reservasi
+    for r in reservasi.values():
+        if r["ruangan"] == id_r:
+            r["total"] = HARGA_TIPE[tipe_baru]
+
+    print("Ruangan berhasil diupdate!")
 
 def hapus_ruangan():
     tampilkan_ruangan()
-    id_del = input("ID yang ingin dihapus: ").upper()
-    
-    if id_del in ruangan:
-        del ruangan[id_del]
+    id_r = input("ID yang ingin dihapus: ").upper()
+    if id_r in ruangan:
+        del ruangan[id_r]
         print("Ruangan dihapus.")
     else:
         print("ID tidak ditemukan.")
 
-# FUNGSI RESERVASI
+
+#reservasi
 def tambah_reservasi():
     if not ruangan:
-        print("Belum ada ruangan. Tambahkan ruangan dulu.")
+        print("Tambahkan ruangan terlebih dahulu!")
         return
-    
+
     nama = input("Nama pemesan: ")
-    tanggal = input("Tanggal (YYYY-MM-DD): ")
+    if not validasi_nama(nama):
+        print("Nama tidak valid!")
+        return
+
+    tanggal = input("Tanggal (DD-MM-YYYY): ")
+    if not validasi_tanggal(tanggal):
+        print("Tanggal tidak valid!")
+        return
 
     tampilkan_ruangan()
-    id_r = input("ID ruangan yang ingin dipesan: ").upper()
-
+    id_r = input("ID ruangan: ").upper()
     if id_r not in ruangan:
-        print("ID ruangan tidak ada.")
+        print("ID ruangan tidak ada!")
         return
 
-    # CEK BENTROK
-    for r in reservasi.values():
-        if r["ruangan"] == id_r and r["tanggal"] == tanggal:
-            print("\n Gagal: Ruangan sudah dipesan pada tanggal tersebut!")
+    # Cek bentrok
+    for d in reservasi.values():
+        if d["ruangan"] == id_r and d["tanggal"] == tanggal:
+            print("Ruangan sudah dipesan pada tanggal itu!")
             return
 
     id_res = f"RS{len(reservasi)+1:03d}"
@@ -100,42 +139,25 @@ def tampilkan_reservasi():
     if not reservasi:
         print("Belum ada reservasi.")
         return
-    
+
     print("\nDaftar Reservasi:")
     for i, (id_r, d) in enumerate(reservasi.items(), start=1):
         print(f"{i}. {id_r} | {d['nama']} | {d['tanggal']} | {d['ruangan']} | Rp{d['total']}")
-    print()
-
-def hapus_reservasi():
-    tampilkan_reservasi()
-    
-    if not reservasi:
-        return
-    
-    id_del = input("ID reservasi yang ingin dihapus: ").upper()
-
-    if id_del in reservasi:
-        del reservasi[id_del]
-        print("Reservasi dihapus.")
-    else:
-        print("ID tidak ditemukan.")
 
 def edit_reservasi():
     tampilkan_reservasi()
     if not reservasi:
         return
 
-    id_edit = input("ID reservasi yang ingin diedit: ").upper()
-
-    if id_edit not in reservasi:
-        print("ID reservasi tidak ditemukan.")
+    id_r = input("ID reservasi: ").upper()
+    if id_r not in reservasi:
+        print("ID tidak ada!")
         return
 
-    data = reservasi[id_edit]
+    data = reservasi[id_r]
 
     print("""
-=== EDIT RESERVASI ===
-1. Edit Nama Pemesan
+1. Edit Nama
 2. Edit Tanggal
 3. Edit Ruangan
 0. Batal
@@ -143,72 +165,76 @@ def edit_reservasi():
 
     pilih = input("Pilih: ")
 
-    # ----- Edit Nama -----
     if pilih == "1":
         baru = input("Nama baru: ")
-        data["nama"] = baru
-        print("Nama berhasil diperbarui.")
+        if validasi_nama(baru):
+            data["nama"] = baru
+            print("Nama diperbarui.")
+        else:
+            print("Nama tidak valid!")
 
-    # ----- Edit Tanggal -----
     elif pilih == "2":
-        baru = input("Tanggal baru (YYYY-MM-DD): ")
+        baru = input("Tanggal baru (DD-MM-YYYY): ")
+        if not validasi_tanggal(baru):
+            print("Tanggal tidak valid!")
+            return
 
         # Cek bentrok
-        for r_id, r in reservasi.items():
-            if r_id != id_edit and r["ruangan"] == data["ruangan"] and r["tanggal"] == baru:
-                print("Gagal: Ruangan sudah dipesan di tanggal itu!")
+        for k, r in reservasi.items():
+            if k != id_r and r["ruangan"] == data["ruangan"] and r["tanggal"] == baru:
+                print("BENTROK!")
                 return
 
         data["tanggal"] = baru
-        print("Tanggal berhasil diperbarui.")
+        print("Tanggal diperbarui.")
 
-    # ----- Edit Ruangan -----
     elif pilih == "3":
         tampilkan_ruangan()
         baru = input("ID ruangan baru: ").upper()
 
         if baru not in ruangan:
-            print("Ruangan tidak ditemukan!")
+            print("Ruangan tidak ada!")
             return
 
         # Cek bentrok
-        for r_id, r in reservasi.items():
-            if r_id != id_edit and r["ruangan"] == baru and r["tanggal"] == data["tanggal"]:
-                print("Gagal: Ruangan sudah dipakai pada tanggal ini!")
+        for k, r in reservasi.items():
+            if k != id_r and r["ruangan"] == baru and r["tanggal"] == data["tanggal"]:
+                print("Ruangan sudah dipakai tanggal itu!")
                 return
 
         data["ruangan"] = baru
         data["total"] = ruangan[baru]["harga"]
-        print("Ruangan berhasil diperbarui.")
+        print("Ruangan diperbarui.")
 
-    elif pilih == "0":
-        return
+def hapus_reservasi():
+    tampilkan_reservasi()
+    id_r = input("ID reservasi: ").upper()
+
+    if id_r in reservasi:
+        del reservasi[id_r]
+        print("Reservasi dihapus.")
     else:
-        print("Pilihan tidak valid.")
+        print("ID tidak ditemukan.")
 
 
-# MENU
-
+#menu
 def menu_ruangan():
     while True:
         print("""
 === MENU RUANGAN ===
 1. Tambah Ruangan
 2. Tampilkan Ruangan
-3. Hapus Ruangan
+3. Edit Ruangan
+4. Hapus Ruangan
 0. Kembali
 """)
-        pilih = input("Pilih: ")
-        if pilih == "1":
-            tambah_ruangan()
-        elif pilih == "2":
-            tampilkan_ruangan()
-        elif pilih == "3":
-            hapus_ruangan()
-        elif pilih == "0":
-            break
-        else:
-            print("Pilihan tidak valid.")
+        p = input("Pilih: ")
+        if p == "1": tambah_ruangan()
+        elif p == "2": tampilkan_ruangan()
+        elif p == "3": edit_ruangan()
+        elif p == "4": hapus_ruangan()
+        elif p == "0": break
+        else: print("Pilihan salah!")
 
 def menu_reservasi():
     while True:
@@ -216,23 +242,17 @@ def menu_reservasi():
 === MENU RESERVASI ===
 1. Tambah Reservasi
 2. Tampilkan Reservasi
-3. Hapus Reservasi
-4. Edit Reservasi
+3. Edit Reservasi
+4. Hapus Reservasi
 0. Kembali
 """)
-        pilih = input("Pilih: ")
-        if pilih == "1":
-            tambah_reservasi()
-        elif pilih == "2":
-            tampilkan_reservasi()
-        elif pilih == "3":
-            hapus_reservasi()
-        elif pilih == "4":
-            edit_reservasi()
-        elif pilih == "0":
-            break
-        else:
-            print("Pilihan tidak valid.")
+        p = input("Pilih: ")
+        if p == "1": tambah_reservasi()
+        elif p == "2": tampilkan_reservasi()
+        elif p == "3": edit_reservasi()
+        elif p == "4": hapus_reservasi()
+        elif p == "0": break
+        else: print("Pilihan salah!")
 
 def menu_utama():
     while True:
@@ -242,18 +262,15 @@ def menu_utama():
 2. Kelola Reservasi
 0. Keluar
 """)
-        pilih = input("Pilih: ")
-        
-        if pilih == "1":
-            menu_ruangan()
-        elif pilih == "2":
-            menu_reservasi()
-        elif pilih == "0":
+        p = input("Pilih: ")
+        if p == "1": menu_ruangan()
+        elif p == "2": menu_reservasi()
+        elif p == "0":
             print("Program selesai.")
             break
         else:
-            print("Pilihan tidak valid.")
+            print("Pilihan salah!")
 
-
+# START
 login()
 menu_utama()
